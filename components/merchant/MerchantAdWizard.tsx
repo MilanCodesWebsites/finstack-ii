@@ -37,6 +37,8 @@ interface MerchantAdDraft {
   maxLimit?: number;
   totalAvailable?: number;
   paymentMethods: string[];
+  alipayAccountName?: string;
+  alipayEmail?: string;
   alipayQrImage?: string; // base64 or url
   customAccountDetails?: string;
   autoReply?: string;
@@ -377,39 +379,61 @@ export function MerchantAdWizard() {
                       <span className="text-sm font-medium">{method}</span>
                     </label>
                   ))}
-                  {/* Alipay QR upload */}
+                  {/* Alipay details */}
                   {ad.paymentMethods.includes('Alipay') && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium mb-2">Alipay QR Code Image</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            update('alipayQrImage', ev.target?.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                      {ad.alipayQrImage && (
-                        <div className="mt-2">
-                          <img src={ad.alipayQrImage} alt="Alipay QR" className="w-32 h-32 object-contain border rounded" />
-                        </div>
-                      )}
+                    <div className="mt-4 space-y-3 p-4 border rounded-lg bg-gray-50">
+                      <h4 className="font-medium text-sm">Alipay Payment Details</h4>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Account Name</label>
+                        <Input
+                          type="text"
+                          placeholder="Enter Alipay account name"
+                          value={(ad as any).alipayAccountName ?? ''}
+                          onChange={e => update('alipayAccountName' as any, e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Email/Phone</label>
+                        <Input
+                          type="text"
+                          placeholder="Enter Alipay email or phone"
+                          value={(ad as any).alipayEmail ?? ''}
+                          onChange={e => update('alipayEmail' as any, e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Alipay QR Code Image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              update('alipayQrImage', ev.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        {ad.alipayQrImage && (
+                          <div className="mt-2">
+                            <img src={ad.alipayQrImage} alt="Alipay QR" className="w-32 h-32 object-contain border rounded bg-white" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   {/* Custom Account details */}
                   {ad.paymentMethods.includes('Custom Account') && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium mb-2">Custom Account Details</label>
+                    <div className="mt-4 space-y-3 p-4 border rounded-lg bg-gray-50">
+                      <h4 className="font-medium text-sm">Custom Account Details</h4>
                       <Textarea
                         value={ad.customAccountDetails ?? ''}
                         onChange={e => update('customAccountDetails', e.target.value)}
                         placeholder="Enter account details, instructions, etc."
-                        className="min-h-[60px]"
+                        className="min-h-[80px]"
                       />
                     </div>
                   )}

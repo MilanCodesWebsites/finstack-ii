@@ -251,6 +251,39 @@ export default function MerchantDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* My Orders */}
+        <Card className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">My Orders</h3>
+            <Link href="/dashboard/merchant/orders">
+              <Button variant="outline" size="sm">
+                View All
+              </Button>
+            </Link>
+          </div>
+          <div className="space-y-3">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Active Orders</span>
+                <span className="text-2xl font-bold text-blue-600">2</span>
+              </div>
+              <p className="text-xs text-gray-600">Orders awaiting action</p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Completed Today</span>
+                <span className="text-2xl font-bold text-green-600">5</span>
+              </div>
+              <p className="text-xs text-gray-600">Successfully completed</p>
+            </div>
+          </div>
+          <Link href="/dashboard/merchant/orders">
+            <Button className="w-full mt-4">
+              Manage Orders
+            </Button>
+          </Link>
+        </Card>
+
         {/* Wallet Balances */}
         <Card className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">

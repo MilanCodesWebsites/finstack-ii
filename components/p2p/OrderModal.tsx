@@ -128,8 +128,8 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
     const order: P2POrder = {
       id: 'order-' + Date.now(),
       adId: ad.id,
-      buyerId: ad.type === 'buy' ? trader.id : 'current-user',
-      sellerId: ad.type === 'sell' ? trader.id : 'current-user',
+      buyerId: 'current-user',
+      merchantId: trader.id, // Always the merchant/trader ID
       cryptoCurrency: ad.cryptoCurrency,
       fiatCurrency: ad.fiatCurrency,
       cryptoAmount: crypto,
@@ -140,7 +140,8 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
       paymentWindow: ad.paymentWindow,
       createdAt: now,
       expiresAt,
-      accountDetails: accountDetails.trim()
+      userAccountDetails: accountDetails.trim(),
+      escrowAddress: '0xescrow_' + Date.now()
     };
 
     onOrderCreated(order);

@@ -18,15 +18,13 @@ import { OrderModal } from "@/components/p2p/OrderModal"
 export default function P2PMarketplacePage() {
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy')
   
-  // Currency selection
-  const [selectedCrypto, setSelectedCrypto] = useState<string>('USDT')
-  const [selectedFiat, setSelectedFiat] = useState<string>('NGN')
-  
   // Filters
+  const [filterPair, setFilterPair] = useState<string>('all')
   const [filterPayment, setFilterPayment] = useState<string>('all')
   const [filterCountry, setFilterCountry] = useState<string>('all')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
-  const [minAmount, setMinAmount] = useState<string>('')
+  const [minPrice, setMinPrice] = useState<string>('')
+  const [maxPrice, setMaxPrice] = useState<string>('')
   const [sortBy, setSortBy] = useState<'price' | 'rating'>('price')
 
   // Modals
@@ -44,8 +42,7 @@ export default function P2PMarketplacePage() {
         const correctType = type === 'buy' ? 'sell' : 'buy'
         return ad.type === correctType
       })
-      .filter(ad => ad.cryptoCurrency === selectedCrypto)
-      .filter(ad => selectedFiat === 'all' || ad.fiatCurrency === selectedFiat)
+      .filter(ad => filterPair === 'all' || `${ad.cryptoCurrency}/${ad.fiatCurrency}` === filterPair)
       .filter(ad => filterPayment === 'all' || ad.paymentMethods.includes(filterPayment as PaymentMethod))
       .filter(ad => filterCountry === 'all' || ad.country === filterCountry)
       .filter(ad => {
@@ -56,7 +53,8 @@ export default function P2PMarketplacePage() {
         return true
       })
       .filter(ad => {
-        if (minAmount && parseFloat(minAmount) > 0 && ad.minLimit > parseFloat(minAmount)) return false
+        if (minPrice && parseFloat(minPrice) > 0 && ad.price < parseFloat(minPrice)) return false
+        if (maxPrice && parseFloat(maxPrice) > 0 && ad.price > parseFloat(maxPrice)) return false
         return true
       })
       .sort((a, b) => {
@@ -90,8 +88,7 @@ export default function P2PMarketplacePage() {
   }
 
   // Get unique pairs and countries for filters
-  const cryptoCurrencies = ['USDT', 'USDC', 'NGN', 'CNGN'] // Finstack supported currencies
-  const fiatCurrencies = ['NGN', 'RMB', 'GHS']
+  const uniquePairs = Array.from(new Set(mockP2PAds.map(ad => `${ad.cryptoCurrency}/${ad.fiatCurrency}`)))
   const uniqueCountries = Array.from(new Set(mockP2PAds.map(ad => ad.country)))
   const paymentMethods: PaymentMethod[] = ['Bank Transfer', 'MTN Mobile Money', 'Alipay', 'Custom Account']
 
@@ -183,9 +180,8 @@ export default function P2PMarketplacePage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground">P2P Marketplace</h1>
           <p className="text-gray-600">Trade crypto with verified merchants</p>
@@ -200,168 +196,200 @@ export default function P2PMarketplacePage() {
         </div>
       </div>
 
-      {/* Buy/Sell Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'buy' | 'sell')} className="space-y-0">
-        <TabsList className="grid w-full max-w-[200px] grid-cols-2 h-12">
-          <TabsTrigger value="buy" className="text-base font-medium">
-            Buy
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'buy' | 'sell')} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="buy" className="text-base">
+            <span className="mr-2">💰</span> Buy Crypto
           </TabsTrigger>
-          <TabsTrigger value="sell" className="text-base font-medium">
-            Sell
+          <TabsTrigger value="sell" className="text-base">
+            <span className="mr-2">💸</span> Sell Crypto
           </TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      {/* Crypto Currency Horizontal Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 overflow-x-auto pb-2 scrollbar-hide">
-        {cryptoCurrencies.map((crypto) => (
-          <button
-            key={crypto}
-            onClick={() => setSelectedCrypto(crypto)}
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap",
-              selectedCrypto === crypto
-                ? "bg-blue-600 text-white font-semibold"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-            )}
-          >
-            {crypto}
-          </button>
-        ))}
-      </div>
-
-      {/* Filters Row */}
-      <div className="flex flex-wrap items-center gap-3 pb-2">
-        {/* Fiat Currency Selector */}
-        <Select value={selectedFiat} onValueChange={setSelectedFiat}>
-          <SelectTrigger className="w-[180px] h-[42px]">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                {selectedFiat === 'all' ? '🌍' : selectedFiat === 'NGN' ? '₦' : selectedFiat === 'RMB' ? '¥' : selectedFiat === 'GHS' ? '₵' : '?'}
-              </div>
-              <SelectValue placeholder="Select currency" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                  🌍
-                </div>
-                <span>All Currencies</span>
-              </div>
-            </SelectItem>
-            {fiatCurrencies.map((currency) => (
-              <SelectItem key={currency} value={currency}>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                    {currency === 'NGN' ? '₦' : currency === 'RMB' ? '¥' : '₵'}
-                  </div>
-                  <span>{currency}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* All payment methods */}
-        <Select value={filterPayment} onValueChange={setFilterPayment}>
-          <SelectTrigger className="w-[220px] h-[42px]">
-            <SelectValue placeholder="All payment methods" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All payment methods</SelectItem>
-            {paymentMethods.map(method => (
-              <SelectItem key={method} value={method}>{method}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* More Filters Button */}
-        <Button variant="outline" size="icon" className="h-[42px] w-[42px]">
-          <Filter className="w-4 h-4" />
-        </Button>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Label htmlFor="verified-toggle" className="text-sm text-gray-600 cursor-pointer whitespace-nowrap">
-            Verified Only
-          </Label>
-          <Switch
-            id="verified-toggle"
-            checked={verifiedOnly}
-            onCheckedChange={setVerifiedOnly}
-          />
-        </div>
-      </div>
-
-      {/* Merchant Listings */}
-      <Card className="shadow-lg border-gray-200">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              {activeTab === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
-            </h3>
-            <span className="text-sm text-gray-600">
-              {activeTab === 'buy' ? buyAds.length : sellAds.length} {(activeTab === 'buy' ? buyAds.length : sellAds.length) === 1 ? 'offer' : 'offers'} available
-            </span>
-          </div>
-          
+        {/* Filters Card */}
+        <Card className="p-4">
           <div className="space-y-4">
-            {/* Header for desktop */}
-            <div className="hidden md:grid md:grid-cols-7 gap-6 p-4 bg-gray-50 rounded-lg font-medium text-sm text-gray-700">
-              <div>Merchant</div>
-              <div>Price</div>
-              <div>Available</div>
-              <div>Limits</div>
-              <div>Payment</div>
-              <div>Rating</div>
-              <div>Action</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium">Filters</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="verified-only"
+                  checked={verifiedOnly}
+                  onCheckedChange={setVerifiedOnly}
+                />
+                <Label htmlFor="verified-only" className="text-sm cursor-pointer">
+                  Verified Merchants Only
+                </Label>
+              </div>
             </div>
             
-            {activeTab === 'buy' && buyAds.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 mb-2">No merchants match your filters</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSelectedCrypto('USDT')
-                    setSelectedFiat('NGN')
-                    setFilterPayment('all')
-                    setFilterCountry('all')
-                    setMinAmount('')
-                    setVerifiedOnly(false)
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            )}
-
-            {activeTab === 'buy' && buyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))}
-            
-            {activeTab === 'sell' && sellAds.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 mb-2">No merchants match your filters</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSelectedCrypto('USDT')
-                    setSelectedFiat('NGN')
-                    setFilterPayment('all')
-                    setFilterCountry('all')
-                    setMinAmount('')
-                    setVerifiedOnly(false)
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            )}
-
-            {activeTab === 'sell' && sellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-red-600 hover:bg-red-700 text-white'))}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <Select value={filterPair} onValueChange={setFilterPair}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Pairs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Pairs</SelectItem>
+                  {uniquePairs.map(pair => (
+                    <SelectItem key={pair} value={pair}>{pair}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterPayment} onValueChange={setFilterPayment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Payment Method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                  {paymentMethods.map(method => (
+                    <SelectItem key={method} value={method}>{method}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterCountry} onValueChange={setFilterCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Countries</SelectItem>
+                  {uniqueCountries.map(country => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Input
+                type="number"
+                placeholder="Min price"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="h-10"
+              />
+              
+              <Input
+                type="number"
+                placeholder="Max price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="h-10"
+              />
+              
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price">Best Price</SelectItem>
+                  <SelectItem value="rating">Top Rated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        <TabsContent value="buy" className="space-y-4 mt-6">
+          <Card className="shadow-lg border-gray-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Buy Crypto from Merchants
+                </h3>
+                <span className="text-sm text-gray-600">
+                  {buyAds.length} {buyAds.length === 1 ? 'offer' : 'offers'} available
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Header for desktop */}
+                <div className="hidden md:grid md:grid-cols-7 gap-6 p-4 bg-gray-50 rounded-lg font-medium text-sm text-gray-700">
+                  <div>Merchant</div>
+                  <div>Price</div>
+                  <div>Available</div>
+                  <div>Limits</div>
+                  <div>Payment</div>
+                  <div>Rating</div>
+                  <div>Action</div>
+                </div>
+                
+                {buyAds.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-2">No merchants match your filters</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setFilterPair('all')
+                        setFilterPayment('all')
+                        setFilterCountry('all')
+                        setMinPrice('')
+                        setMaxPrice('')
+                        setVerifiedOnly(false)
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                ) : (
+                  buyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))
+                )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sell" className="space-y-4 mt-6">
+          <Card className="shadow-lg border-gray-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Sell Crypto to Merchants
+                </h3>
+                <span className="text-sm text-gray-600">
+                  {sellAds.length} {sellAds.length === 1 ? 'offer' : 'offers'} available
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Header for desktop */}
+                <div className="hidden md:grid md:grid-cols-7 gap-6 p-4 bg-gray-50 rounded-lg font-medium text-sm text-gray-700">
+                  <div>Merchant</div>
+                  <div>Price</div>
+                  <div>Available</div>
+                  <div>Limits</div>
+                  <div>Payment</div>
+                  <div>Rating</div>
+                  <div>Action</div>
+                </div>
+                
+                {sellAds.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-2">No merchants match your filters</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setFilterPair('all')
+                        setFilterPayment('all')
+                        setFilterCountry('all')
+                        setMinPrice('')
+                        setMaxPrice('')
+                        setVerifiedOnly(false)
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                ) : (
+                  sellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-red-600 hover:bg-red-700 text-white'))
+                )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       {selectedMerchant && (

@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { P2POrder, OrderStatus, getTrader } from '@/lib/p2p-mock-data';
+import { P2POrder, OrderStatus, getMerchant } from '@/lib/p2p-mock-data';
 import { 
   Clock, 
   CheckCircle2, 
@@ -143,8 +143,7 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
     );
   }
 
-  const seller = getTrader(order.sellerId);
-  const buyer = getTrader(order.buyerId);
+  const merchant = getMerchant(order.merchantId);
   const isCurrentUserBuyer = order.buyerId === 'current-user';
 
   const formatTime = (seconds: number) => {
@@ -240,13 +239,13 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
               <span className="text-gray-600">Payment Method</span>
               <span className="font-medium">{order.paymentMethod}</span>
             </div>
-            {order.accountDetails && (
+            {order.userAccountDetails && (
               <div className="pt-2 border-t">
                 <span className="text-gray-600 block mb-1">
                   {isCurrentUserBuyer ? 'Your Wallet/Account' : 'Buyer\'s Wallet/Account'}
                 </span>
                 <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="font-mono text-xs break-all">{order.accountDetails}</p>
+                  <p className="font-mono text-xs break-all">{order.userAccountDetails}</p>
                 </div>
               </div>
             )}
@@ -258,22 +257,22 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
         </Card>
 
         <Card className="p-6">
-          <h3 className="font-semibold mb-4">Trading Partner</h3>
+          <h3 className="font-semibold mb-4">Merchant</h3>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                {(isCurrentUserBuyer ? seller?.name : buyer?.name)?.substring(0, 2).toUpperCase()}
+                {merchant?.name?.substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <p className="font-medium">{isCurrentUserBuyer ? seller?.name : buyer?.name}</p>
+                <p className="font-medium">{merchant?.name}</p>
                 <p className="text-xs text-gray-600">
-                  {(isCurrentUserBuyer ? seller?.totalTrades : buyer?.totalTrades) || 0} trades • {(isCurrentUserBuyer ? seller?.rating : buyer?.rating) || 0}% rating
+                  {merchant?.totalTrades || 0} trades • {merchant?.rating || 0}% rating
                 </p>
               </div>
             </div>
             <Button variant="outline" className="w-full" size="sm">
               <MessageSquare className="w-4 h-4 mr-2" />
-              Contact
+              Contact Merchant
             </Button>
           </div>
         </Card>

@@ -414,6 +414,7 @@ export default function DepositPage() {
                     <ul className="text-sm text-yellow-700 space-y-1">
                       {selectedWallet === "NGN" ? (
                         <>
+                          <li>• <strong>Please deposit from an account that has the same name on your Finstack account. No third-party deposits.</strong></li>
                           <li>• Only send NGN from Nigerian bank accounts</li>
                           <li>• Include your user ID in the transfer description</li>
                           <li>• Deposits are processed within 5-10 minutes</li>

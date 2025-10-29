@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Check, ChevronLeft, ChevronRight, Coins, Shuffle, Tag, Layers, CreditCard, MessageSquare, Eye } from 'lucide-react';
+import { saveMerchantAd } from '@/lib/p2p-storage';
+import { P2PAd, PaymentMethod } from '@/lib/p2p-mock-data';
 
 // Supported pairs constant
 const SUPPORTED_PAIRS = [
@@ -186,13 +188,41 @@ export function MerchantAdWizard() {
 
   const publish = () => {
     console.log('Merchant Ad Published:', { ...ad, floatingDisplayPrice });
+    
     try {
+      // Convert wizard format to P2PAd format
+      const [cryptoCurrency, fiatCurrency] = ad.pair.split('/');
+      
+      const newAd: P2PAd = {
+        id: 'ad-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        merchantId: 'current-merchant', // In a real app, this would be the logged-in merchant
+        type: ad.tradeType as 'buy' | 'sell',
+        cryptoCurrency,
+        fiatCurrency,
+        price: ad.priceType === 'fixed' ? ad.fixedPrice! : (floatingDisplayPrice || ad.fixedPrice!),
+        available: ad.totalAvailable || 0,
+        minLimit: ad.minLimit || 0,
+        maxLimit: ad.maxLimit || 0,
+        paymentMethods: ad.paymentMethods as PaymentMethod[],
+        paymentWindow: ad.timeLimit || 30,
+        instructions: ad.instructions,
+        autoReply: ad.autoReply,
+        country: 'GLOBAL' as const
+      };
+      
+      // Save to localStorage
+      saveMerchantAd(newAd);
+      
+      // Also dispatch event for backward compatibility
       const event = new CustomEvent('merchant-ad-published', { detail: { ...ad, floatingDisplayPrice } });
       window.dispatchEvent(event);
-    } catch {}
+    } catch (err) {
+      console.error('Error saving ad:', err);
+    }
+    
     toast({
       title: 'Ad Published',
-      description: 'Your P2P ad has been created (mock submission).'
+      description: 'Your P2P ad has been created and is now live.'
     });
     // reset optionally
     setCurrent(0);

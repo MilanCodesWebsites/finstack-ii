@@ -5,12 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { P2PAd, Trader, P2POrder } from '@/lib/p2p-mock-data';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeftRight, Clock, DollarSign, AlertCircle, Wallet, Building2, Loader2, Info } from 'lucide-react';
+import { ArrowLeftRight, Clock, DollarSign, AlertCircle, Loader2, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { calculateP2PFee, getP2PFeeSettings } from '@/components/admin/P2PFeeSettings';
 
 interface OrderModalProps {
   ad: P2PAd;
@@ -26,21 +24,7 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
   const [fiatAmount, setFiatAmount] = useState('');
   const [cryptoAmount, setCryptoAmount] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<string>(ad.paymentMethods[0]);
-  const [accountDetails, setAccountDetails] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [fee, setFee] = useState(0);
-  const [feeSettings, setFeeSettings] = useState(getP2PFeeSettings());
-
-  // Calculate fee when fiat amount changes
-  useEffect(() => {
-    if (fiatAmount && !isNaN(parseFloat(fiatAmount))) {
-      const amount = parseFloat(fiatAmount);
-      const calculatedFee = calculateP2PFee(amount);
-      setFee(calculatedFee);
-    } else {
-      setFee(0);
-    }
-  }, [fiatAmount]);
 
   // Auto-calculate opposite amount
   useEffect(() => {
@@ -97,26 +81,6 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
       return;
     }
 
-    // Validate account details based on order type
-    const isBuying = ad.type === 'sell'; // If ad is 'sell', current user is buying
-    if (isBuying && !accountDetails.trim()) {
-      toast({
-        title: 'Account Details Required',
-        description: 'Please provide your wallet address to receive the crypto',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!isBuying && selectedPayment !== 'Crypto Wallet' && !accountDetails.trim()) {
-      toast({
-        title: 'Account Details Required',
-        description: 'Please provide your account details for payment',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     // Simulate API call delay
@@ -140,7 +104,6 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
       paymentWindow: ad.paymentWindow,
       createdAt: now,
       expiresAt,
-      userAccountDetails: accountDetails.trim(),
       escrowAddress: '0xescrow_' + Date.now()
     };
 
@@ -160,7 +123,7 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {ad.type === 'buy' ? 'Sell' : 'Buy'} {ad.cryptoCurrency}
+            {ad.type === 'buy' ? 'Sell' : 'Buy'} {ad.cryptoCurrency} with {ad.fiatCurrency}
           </DialogTitle>
         </DialogHeader>
 
@@ -244,67 +207,13 @@ export function OrderModal({ ad, trader, open, onClose, onOrderCreated }: OrderM
             </div>
           </div>
 
-          {/* Account Details */}
-          <div>
-            <Label htmlFor="account-details" className="flex items-center gap-2">
-              {ad.type === 'sell' ? (
-                <>
-                  <Wallet className="w-4 h-4" />
-                  Your Wallet Address
-                </>
-              ) : (
-                <>
-                  <Building2 className="w-4 h-4" />
-                  Your Account Details
-                </>
-              )}
-            </Label>
-            <Textarea
-              id="account-details"
-              value={accountDetails}
-              onChange={(e) => setAccountDetails(e.target.value)}
-              placeholder={
-                ad.type === 'sell'
-                  ? `Enter your ${ad.cryptoCurrency} wallet address to receive crypto`
-                  : selectedPayment === 'Bank Transfer'
-                  ? 'Enter your bank account details (Bank name, Account number, Account name)'
-                  : selectedPayment === 'Mobile Money'
-                  ? 'Enter your mobile money number'
-                  : 'Enter your account details'
-              }
-              className="mt-1 min-h-[80px] resize-none"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {ad.type === 'sell'
-                ? 'The seller will send crypto to this address'
-                : 'The buyer will send payment to these details'}
-            </p>
-          </div>
-
-          {/* Transaction Fee */}
-          {feeSettings.feeEnabled && fee > 0 && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-blue-900 mb-1">Transaction Fee</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-blue-700">Platform fee ({feeSettings.feePercentage}%)</span>
-                    <span className="text-sm font-bold text-blue-900">${fee.toFixed(2)}</span>
-                  </div>
-                  {fiatAmount && (
-                    <div className="flex items-center justify-between mt-1 pt-1 border-t border-blue-200">
-                      <span className="text-xs font-medium text-blue-900">Total Amount</span>
-                      <span className="text-sm font-bold text-blue-900">
-                        ${(parseFloat(fiatAmount) + fee).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+          {/* Platform Fee */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex gap-2">
+            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-blue-900">
+              <p className="font-medium">A 0.5% platform fee applies to this transaction.</p>
             </div>
-          )}
+          </div>
 
           {/* Instructions */}
           {ad.instructions && (

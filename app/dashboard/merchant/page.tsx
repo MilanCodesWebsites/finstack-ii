@@ -25,9 +25,14 @@ import {
   Store,
   BadgeCheck,
   Trash2,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EditAdModal } from '@/components/p2p/EditAdModal';
+import { saveMerchantAd, getMerchantAdsByMerchantId, deleteMerchantAd } from '@/lib/p2p-storage';
+import { P2PAd, PaymentMethod } from '@/lib/p2p-mock-data';
+import { useToast } from '@/hooks/use-toast';
 
 interface MerchantStats {
   totalTrades: number;
@@ -57,6 +62,7 @@ interface StoredAd {
 }
 
 export default function MerchantDashboard() {
+  const { toast } = useToast();
   const [applicationOpen, setApplicationOpen] = useState(false);
   const [merchantStatus, setMerchantStatus] = useState<string>(() => {
     try { return localStorage.getItem('merchant-status') || 'not_applied'; } catch { return 'not_applied'; }
@@ -76,6 +82,9 @@ export default function MerchantDashboard() {
     USDT: 8500
   });
 
+  // Edit modal state
+  const [selectedAd, setSelectedAd] = useState<P2PAd | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const [showBalance, setShowBalance] = useState(true);
   const [copied, setCopied] = useState('');
@@ -141,12 +150,85 @@ export default function MerchantDashboard() {
       paymentMethods: draft.paymentMethods,
       timeLimit: draft.timeLimit,
     };
+    
+    // Also save to P2P storage so it appears in marketplace
+    const [crypto, fiat] = draft.pair.split('/');
+    const p2pAd: P2PAd = {
+      id: newAd.id,
+      merchantId: 'TestingMerchant',
+      type: draft.tradeType as 'buy' | 'sell',
+      cryptoCurrency: crypto,
+      fiatCurrency: fiat,
+      price: draft.fixedPrice || 0,
+      available: draft.totalAvailable || 0,
+      minLimit: draft.minLimit || 0,
+      maxLimit: draft.maxLimit || 0,
+      paymentMethods: draft.paymentMethods as PaymentMethod[],
+      paymentWindow: draft.timeLimit || 30,
+      country: 'GLOBAL' as const
+    };
+    
+    saveMerchantAd(p2pAd);
     setAds(prev => [newAd, ...prev]);
     setShowWizard(false);
   };
 
   const deleteAd = (id: string) => {
+    // Delete from both storages
+    deleteMerchantAd(id);
     setAds(prev => prev.filter(a => a.id !== id));
+    toast({
+      title: 'Ad Deleted',
+      description: 'Your ad has been removed'
+    });
+  };
+
+  const handleEditAd = (ad: StoredAd) => {
+    // Convert StoredAd to P2PAd format
+    const [crypto, fiat] = ad.pair.split('/');
+    const p2pAd: P2PAd = {
+      id: ad.id,
+      merchantId: 'TestingMerchant',
+      type: ad.tradeType as 'buy' | 'sell',
+      cryptoCurrency: crypto,
+      fiatCurrency: fiat,
+      price: ad.fixedPrice || 0,
+      available: ad.totalAvailable || 0,
+      minLimit: ad.minLimit || 0,
+      maxLimit: ad.maxLimit || 0,
+      paymentMethods: ad.paymentMethods as PaymentMethod[],
+      paymentWindow: ad.timeLimit || 30,
+      country: 'GLOBAL' as const
+    };
+    setSelectedAd(p2pAd);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = (updatedAd: P2PAd) => {
+    // Save to P2P storage
+    saveMerchantAd(updatedAd);
+    
+    // Update legacy storage format too
+    setAds(prev => prev.map(a => {
+      if (a.id === updatedAd.id) {
+        return {
+          ...a,
+          fixedPrice: updatedAd.price,
+          totalAvailable: updatedAd.available,
+          minLimit: updatedAd.minLimit,
+          maxLimit: updatedAd.maxLimit,
+          paymentMethods: updatedAd.paymentMethods as any,
+          timeLimit: updatedAd.paymentWindow
+        };
+      }
+      return a;
+    }));
+    
+    toast({
+      title: 'Ad Updated',
+      description: 'Your ad has been updated successfully'
+    });
+    setShowEditModal(false);
   };
 
   const handleCopy = (text: string, type: string) => {
@@ -384,6 +466,14 @@ export default function MerchantDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleEditAd(ad)} 
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => deleteAd(ad.id)} className="text-red-600">
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -456,6 +546,15 @@ export default function MerchantDashboard() {
           try { localStorage.setItem('merchant-status', 'pending'); } catch {}
         }}
       />
+      
+      {selectedAd && (
+        <EditAdModal
+          ad={selectedAd}
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 }

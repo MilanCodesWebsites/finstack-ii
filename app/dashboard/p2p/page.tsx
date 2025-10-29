@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { mockP2PAds, mockMerchants, getMerchant, P2PAd, P2POrder, PaymentMethod, CountryCode } from "@/lib/p2p-mock-data"
 import { P2P_CURRENCY_COUNTRIES, P2PCurrency } from "@/lib/constants"
+import { getMerchantAds } from "@/lib/p2p-storage"
 import { TraderProfileModal } from "@/components/p2p/TraderProfileModal"
 import { OrderModal } from "@/components/p2p/OrderModal"
 
@@ -72,6 +73,30 @@ export default function P2PMarketplacePage() {
   const buyAds = filterAds(mockP2PAds, 'buy')
   const sellAds = filterAds(mockP2PAds, 'sell')
 
+  // Load merchant ads from localStorage
+  const [merchantAds, setMerchantAds] = useState<P2PAd[]>([])
+  
+  useEffect(() => {
+    // Load ads immediately
+    const stored = getMerchantAds()
+    setMerchantAds(stored)
+    console.log('📊 Loaded merchant ads:', stored)
+
+    // Also check every 500ms in case new ads were added
+    const interval = setInterval(() => {
+      const updated = getMerchantAds()
+      setMerchantAds(updated)
+    }, 500)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Combine mock ads with merchant ads from localStorage
+  const allAds = [...mockP2PAds, ...merchantAds]
+  
+  const filteredBuyAds = filterAds(allAds, 'buy')
+  const filteredSellAds = filterAds(allAds, 'sell')
+
   const handleMerchantClick = (merchantId: string) => {
     setSelectedMerchant(merchantId)
     setShowMerchantModal(true)
@@ -83,10 +108,8 @@ export default function P2PMarketplacePage() {
   }
 
   const handleOrderCreated = (order: P2POrder) => {
-    const stored = localStorage.getItem('p2p-orders')
-    const orders: P2POrder[] = stored ? JSON.parse(stored) : []
-    orders.push(order)
-    localStorage.setItem('p2p-orders', JSON.stringify(orders))
+    const { saveOrder } = require('@/lib/p2p-storage')
+    saveOrder(order)
   }
 
   // Get unique pairs and countries for filters
@@ -96,8 +119,31 @@ export default function P2PMarketplacePage() {
   const paymentMethods: PaymentMethod[] = ['Bank Transfer', 'MTN Mobile Money', 'Alipay', 'Custom Account']
 
   const renderAdRow = (ad: P2PAd, actionLabel: string, actionColor: string) => {
-    const merchant = getMerchant(ad.merchantId)
-    if (!merchant) return null
+    let merchant = getMerchant(ad.merchantId)
+    
+    // Fallback: create a temporary merchant object if not found
+    if (!merchant) {
+      console.warn(`⚠️ Merchant not found: ${ad.merchantId}, using fallback`)
+      // Use deterministic rating based on merchant ID hash to avoid hydration mismatch
+      const hash = ad.merchantId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      const rating = 95 + (hash % 5) // Consistent rating 95-99 based on merchantId
+      const trades = (hash * 7) % 1000 // Consistent trades based on merchantId
+      
+      merchant = {
+        id: ad.merchantId,
+        name: ad.merchantId,
+        businessName: `${ad.merchantId} Trading`,
+        rating: rating,
+        totalTrades: trades,
+        completionRate: 98,
+        responseTime: '2 mins',
+        verifiedBadge: true,
+        activeAds: 1,
+        country: ad.country || 'GLOBAL',
+        joinedDate: '2024-01-15',
+        languages: ['English']
+      }
+    }
 
     return (
       <div 
@@ -302,7 +348,7 @@ export default function P2PMarketplacePage() {
               {activeTab === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
             </h3>
             <span className="text-sm text-gray-600">
-              {activeTab === 'buy' ? buyAds.length : sellAds.length} {(activeTab === 'buy' ? buyAds.length : sellAds.length) === 1 ? 'offer' : 'offers'} available
+              {activeTab === 'buy' ? filteredBuyAds.length : filteredSellAds.length} {(activeTab === 'buy' ? filteredBuyAds.length : filteredSellAds.length) === 1 ? 'offer' : 'offers'} available
             </span>
           </div>
           
@@ -318,7 +364,7 @@ export default function P2PMarketplacePage() {
               <div>Action</div>
             </div>
             
-            {activeTab === 'buy' && buyAds.length === 0 && (
+            {activeTab === 'buy' && filteredBuyAds.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-2">No merchants match your filters</p>
                 <Button 
@@ -337,9 +383,9 @@ export default function P2PMarketplacePage() {
               </div>
             )}
 
-            {activeTab === 'buy' && buyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))}
+            {activeTab === 'buy' && filteredBuyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))}
             
-            {activeTab === 'sell' && sellAds.length === 0 && (
+            {activeTab === 'sell' && filteredSellAds.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-2">No merchants match your filters</p>
                 <Button 
@@ -358,7 +404,7 @@ export default function P2PMarketplacePage() {
               </div>
             )}
 
-            {activeTab === 'sell' && sellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-red-600 hover:bg-red-700 text-white'))}
+            {activeTab === 'sell' && filteredSellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-blue-600 hover:bg-blue-700 text-white'))}
           </div>
         </div>
       </Card>

@@ -150,6 +150,20 @@ export const mockMerchants: Record<string, Merchant> = {
     country: 'GLOBAL',
     joinedDate: '2022-11-01',
     languages: ['English', 'French', 'Portuguese']
+  },
+  'TestingMerchant': {
+    id: 'TestingMerchant',
+    name: 'TestingMerchant',
+    businessName: 'TestingMerchant Trading',
+    rating: 100,
+    totalTrades: 0,
+    completionRate: 100,
+    responseTime: '1 min',
+    verifiedBadge: true,
+    activeAds: 0,
+    country: 'GLOBAL',
+    joinedDate: new Date().toISOString().split('T')[0],
+    languages: ['English']
   }
 };
 

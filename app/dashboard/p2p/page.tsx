@@ -45,6 +45,7 @@ export default function P2PMarketplacePage() {
         const correctType = type === 'buy' ? 'sell' : 'buy'
         return ad.type === correctType
       })
+      .filter(ad => ad.isActive !== false) // Only show active ads
       .filter(ad => ad.cryptoCurrency === selectedCrypto)
       .filter(ad => selectedFiat === 'all' || ad.fiatCurrency === selectedFiat)
       .filter(ad => filterPayment === 'all' || ad.paymentMethods.includes(filterPayment as PaymentMethod))
@@ -62,16 +63,18 @@ export default function P2PMarketplacePage() {
       })
       .sort((a, b) => {
         if (sortBy === 'price') {
-          return type === 'buy' ? a.price - b.price : b.price - a.price
+          // When user clicks 'buy', they see merchants 'selling' (correctType='sell')
+          // We want lowest prices first for buying
+          // When user clicks 'sell', they see merchants 'buying' (correctType='buy')
+          // We want highest prices first for selling
+          const correctType = type === 'buy' ? 'sell' : 'buy'
+          return correctType === 'sell' ? a.price - b.price : b.price - a.price
         }
         const merchantA = getMerchant(a.merchantId)
         const merchantB = getMerchant(b.merchantId)
         return (merchantB?.rating || 0) - (merchantA?.rating || 0)
       })
   }
-
-  const buyAds = filterAds(mockP2PAds, 'buy')
-  const sellAds = filterAds(mockP2PAds, 'sell')
 
   // Load merchant ads from localStorage
   const [merchantAds, setMerchantAds] = useState<P2PAd[]>([])
@@ -94,8 +97,8 @@ export default function P2PMarketplacePage() {
   // Combine mock ads with merchant ads from localStorage
   const allAds = [...mockP2PAds, ...merchantAds]
   
-  const filteredBuyAds = filterAds(allAds, 'buy')
-  const filteredSellAds = filterAds(allAds, 'sell')
+  const buyAds = filterAds(allAds, 'buy')
+  const sellAds = filterAds(allAds, 'sell')
 
   const handleMerchantClick = (merchantId: string) => {
     setSelectedMerchant(merchantId)
@@ -192,11 +195,19 @@ export default function P2PMarketplacePage() {
         <div className="space-y-1">
           <p className="text-xs text-gray-600 mb-1 md:hidden">Payment</p>
           <div className="flex flex-wrap gap-1">
-            {ad.paymentMethods.map((method) => (
-              <span key={method} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
+            {ad.paymentMethods.slice(0, 2).map((method) => (
+              <span key={method} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full whitespace-nowrap">
                 {method}
               </span>
             ))}
+            {ad.paymentMethods.length > 2 && (
+              <span 
+                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium cursor-help whitespace-nowrap"
+                title={ad.paymentMethods.slice(2).join(', ')}
+              >
+                +{ad.paymentMethods.length - 2} more
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-600">
             <Clock className="w-3 h-3" />
@@ -348,7 +359,7 @@ export default function P2PMarketplacePage() {
               {activeTab === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
             </h3>
             <span className="text-sm text-gray-600">
-              {activeTab === 'buy' ? filteredBuyAds.length : filteredSellAds.length} {(activeTab === 'buy' ? filteredBuyAds.length : filteredSellAds.length) === 1 ? 'offer' : 'offers'} available
+              {activeTab === 'buy' ? buyAds.length : sellAds.length} {(activeTab === 'buy' ? buyAds.length : sellAds.length) === 1 ? 'offer' : 'offers'} available
             </span>
           </div>
           
@@ -364,7 +375,7 @@ export default function P2PMarketplacePage() {
               <div>Action</div>
             </div>
             
-            {activeTab === 'buy' && filteredBuyAds.length === 0 && (
+            {activeTab === 'buy' && buyAds.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-2">No merchants match your filters</p>
                 <Button 
@@ -383,9 +394,9 @@ export default function P2PMarketplacePage() {
               </div>
             )}
 
-            {activeTab === 'buy' && filteredBuyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))}
+            {activeTab === 'buy' && buyAds.map(ad => renderAdRow(ad, 'Buy', 'bg-green-600 hover:bg-green-700 text-white'))}
             
-            {activeTab === 'sell' && filteredSellAds.length === 0 && (
+            {activeTab === 'sell' && sellAds.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-2">No merchants match your filters</p>
                 <Button 
@@ -404,7 +415,7 @@ export default function P2PMarketplacePage() {
               </div>
             )}
 
-            {activeTab === 'sell' && filteredSellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-blue-600 hover:bg-blue-700 text-white'))}
+            {activeTab === 'sell' && sellAds.map(ad => renderAdRow(ad, 'Sell', 'bg-blue-600 hover:bg-blue-700 text-white'))}
           </div>
         </div>
       </Card>

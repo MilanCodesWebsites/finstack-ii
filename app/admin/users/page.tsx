@@ -94,6 +94,29 @@ export default function UsersPage() {
     }
   };
 
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const response = await fetch('/api/admin/users/role', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+
+      if (response.ok) {
+        // Update the user's role in the list
+        setUsers(prev => prev.map(user => {
+          if (user.id === userId) {
+            return { ...user, role: newRole };
+          }
+          return user;
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to change user role:', error);
+      throw error; // Re-throw to let the modal handle the error
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -113,7 +136,7 @@ export default function UsersPage() {
       </div>
       
       <UsersFilter filters={filters} onFiltersChange={setFilters} />
-      <UsersTable users={filteredUsers} onAction={handleUserAction} />
+      <UsersTable users={filteredUsers} onAction={handleUserAction} onRoleChange={handleRoleChange} />
     </div>
   );
 }

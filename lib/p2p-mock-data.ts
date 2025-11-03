@@ -1,7 +1,7 @@
 // Mock data for P2P Merchant Marketplace system
 
 export type OrderStatus = 'pending_payment' | 'awaiting_release' | 'completed' | 'cancelled' | 'disputed';
-export type PaymentMethod = 'Bank Transfer' | 'MTN Mobile Money' | 'Alipay' | 'Custom Account';
+export type PaymentMethod = 'Bank Transfer' | 'MTN Mobile Money' | 'Alipay' | 'Custom Account' | 'CNGN Wallet';
 export type AdType = 'buy' | 'sell';
 export type RatingType = 'positive' | 'neutral' | 'negative';
 export type CountryCode = 'NG' | 'CN' | 'GH' | 'GLOBAL';
@@ -50,6 +50,7 @@ export interface P2PAd {
   instructions?: string;
   autoReply?: string;
   country: CountryCode;
+  isActive?: boolean; // Ad status control - defaults to true if not specified
 }
 
 export interface P2POrder {

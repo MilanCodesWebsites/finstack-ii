@@ -45,6 +45,7 @@ interface MerchantStats {
 interface WalletBalance {
   NGN: number;
   USDT: number;
+  CNGN: number;
 }
 
 interface StoredAd {
@@ -79,7 +80,8 @@ export default function MerchantDashboard() {
 
   const [walletBalance, setWalletBalance] = useState<WalletBalance>({
     NGN: 2750000,
-    USDT: 8500
+    USDT: 8500,
+    CNGN: 1500000
   });
 
   // Edit modal state
@@ -165,12 +167,18 @@ export default function MerchantDashboard() {
       maxLimit: draft.maxLimit || 0,
       paymentMethods: draft.paymentMethods as PaymentMethod[],
       paymentWindow: draft.timeLimit || 30,
-      country: 'GLOBAL' as const
+      country: 'GLOBAL' as const,
+      isActive: true // New ads are active by default
     };
     
     saveMerchantAd(p2pAd);
     setAds(prev => [newAd, ...prev]);
     setShowWizard(false);
+    
+    toast({
+      title: 'Ad Published Successfully!',
+      description: 'Your ad is now live on the P2P marketplace.',
+    });
   };
 
   const deleteAd = (id: string) => {
@@ -198,7 +206,8 @@ export default function MerchantDashboard() {
       maxLimit: ad.maxLimit || 0,
       paymentMethods: ad.paymentMethods as PaymentMethod[],
       paymentWindow: ad.timeLimit || 30,
-      country: 'GLOBAL' as const
+      country: 'GLOBAL' as const,
+      isActive: true // Maintain active status
     };
     setSelectedAd(p2pAd);
     setShowEditModal(true);
@@ -424,6 +433,30 @@ export default function MerchantDashboard() {
                 >
                   {copied === 'usdt' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                   {copied === 'usdt' ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                  <span className="text-lg font-bold text-purple-600">₵</span>
+                </div>
+                <div>
+                  <p className="font-medium">CNGN Wallet</p>
+                  <p className="text-sm text-gray-600">Nigerian CBDC</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold">
+                  {showBalance ? `₵${walletBalance.CNGN.toLocaleString()}` : '••••••'}
+                </p>
+                <button
+                  onClick={() => handleCopy(walletBalance.CNGN.toString(), 'cngn')}
+                  className="text-xs text-gray-500 hover:text-blue-600 flex items-center gap-1"
+                >
+                  {copied === 'cngn' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied === 'cngn' ? 'Copied' : 'Copy'}
                 </button>
               </div>
             </div>

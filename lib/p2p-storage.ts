@@ -19,14 +19,23 @@ export function getMerchantAds(): P2PAd[] {
 }
 
 /**
- * Save a new merchant ad to localStorage
+ * Save a new merchant ad to localStorage (or update if exists)
  */
 export function saveMerchantAd(ad: P2PAd): void {
   if (typeof window === 'undefined') return;
   
   try {
     const ads = getMerchantAds();
-    ads.push(ad);
+    const existingIndex = ads.findIndex(a => a.id === ad.id);
+    
+    if (existingIndex !== -1) {
+      // Update existing ad
+      ads[existingIndex] = ad;
+    } else {
+      // Add new ad
+      ads.push(ad);
+    }
+    
     localStorage.setItem(MERCHANT_ADS_KEY, JSON.stringify(ads));
   } catch (error) {
     console.error('Error saving merchant ad to localStorage:', error);
@@ -81,6 +90,45 @@ export function getMerchantAdById(id: string): P2PAd | undefined {
 export function getMerchantAdsByMerchantId(merchantId: string): P2PAd[] {
   const ads = getMerchantAds();
   return ads.filter(ad => ad.merchantId === merchantId);
+}
+
+/**
+ * Toggle ad active status
+ */
+export function toggleAdStatus(id: string): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const ads = getMerchantAds();
+    const index = ads.findIndex(ad => ad.id === id);
+    
+    if (index !== -1) {
+      ads[index].isActive = !ads[index].isActive;
+      localStorage.setItem(MERCHANT_ADS_KEY, JSON.stringify(ads));
+    }
+  } catch (error) {
+    console.error('Error toggling ad status:', error);
+  }
+}
+
+/**
+ * Bulk update ad statuses
+ */
+export function bulkUpdateAdStatus(ids: string[], isActive: boolean): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const ads = getMerchantAds();
+    const updated = ads.map(ad => {
+      if (ids.includes(ad.id)) {
+        return { ...ad, isActive };
+      }
+      return ad;
+    });
+    localStorage.setItem(MERCHANT_ADS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('Error bulk updating ad statuses:', error);
+  }
 }
 
 /**

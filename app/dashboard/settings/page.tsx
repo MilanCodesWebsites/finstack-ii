@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AddAccountDialog } from "@/components/dashboard/add-account-dialog"
+import { KYCForm } from "@/components/dashboard/KYCForm"
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile")
@@ -198,94 +199,11 @@ export default function SettingsPage() {
 
           {/* KYC Tab */}
           <TabsContent value="kyc" className="space-y-4 md:space-y-6">
-            <Card className="p-4 md:p-6 border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <div>
-                  <h2 className="text-lg md:text-xl font-semibold text-gray-900">KYC Verification</h2>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">Verify your identity to unlock full features</p>
-                </div>
-                <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs md:text-sm font-medium">
-                  <div className="h-1.5 w-1.5 md:h-2 md:w-2 bg-yellow-500 rounded-full" />
-                  Pending
-                </div>
-              </div>
-
-              <div className="space-y-4 md:space-y-6">
-                {/* Legal Name - MANDATORY */}
-                <div>
-                  <Label htmlFor="legalName" className="text-xs md:text-sm font-medium text-gray-700 mb-2 block">
-                    Full Legal Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="legalName"
-                    placeholder="Enter your name exactly as it appears on your ID"
-                    className="border-gray-200 text-sm md:text-base h-9 md:h-10"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">This must match the name on your government-issued ID</p>
-                </div>
-
-                {/* ID Front - MANDATORY */}
-                <div>
-                  <Label className="text-xs md:text-sm font-medium text-gray-700 mb-2 block">
-                    ID Front Side <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 md:p-6 text-center hover:border-blue-600 transition-colors cursor-pointer">
-                    <Upload className="h-6 w-6 md:h-8 md:w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs md:text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">Front side of National ID, Driver's License, or Passport</p>
-                  </div>
-                </div>
-
-                {/* ID Back - MANDATORY */}
-                <div>
-                  <Label className="text-xs md:text-sm font-medium text-gray-700 mb-2 block">
-                    ID Back Side <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 md:p-6 text-center hover:border-blue-600 transition-colors cursor-pointer">
-                    <Upload className="h-6 w-6 md:h-8 md:w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs md:text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">Back side of your government-issued ID</p>
-                  </div>
-                </div>
-
-                {/* Proof of Address */}
-                <div>
-                  <Label className="text-xs md:text-sm font-medium text-gray-700 mb-2 block">Proof of Address (Optional)</Label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 md:p-6 text-center hover:border-blue-600 transition-colors cursor-pointer">
-                    <Upload className="h-6 w-6 md:h-8 md:w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs md:text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">Utility bill or bank statement (less than 3 months old)</p>
-                  </div>
-                </div>
-
-                {/* Selfie */}
-                <div>
-                  <Label className="text-xs md:text-sm font-medium text-gray-700 mb-2 block">Selfie with ID (Optional)</Label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 md:p-6 text-center hover:border-blue-600 transition-colors cursor-pointer">
-                    <Camera className="h-6 w-6 md:h-8 md:w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs md:text-sm text-gray-600 mb-1">Click to take a photo</p>
-                    <p className="text-xs text-gray-500">Hold your ID next to your face</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 md:mt-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 mb-4">
-                  <p className="text-xs md:text-sm text-blue-800 font-medium mb-1">Required Documents:</p>
-                  <ul className="text-xs md:text-sm text-blue-700 list-disc list-inside space-y-1">
-                    <li>Full legal name (as it appears on ID)</li>
-                    <li>Front side of government-issued ID</li>
-                    <li>Back side of government-issued ID</li>
-                  </ul>
-                </div>
-                <div className="flex justify-end">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm h-9 md:h-10">
-                    Submit for Verification
-                  </Button>
-                </div>
-              </div>
-            </Card>
+            <div className="mb-4">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-1">KYC Verification</h2>
+              <p className="text-xs md:text-sm text-gray-600">Complete all steps to verify your identity and unlock full platform features</p>
+            </div>
+            <KYCForm />
           </TabsContent>
 
           {/* Notifications Tab */}

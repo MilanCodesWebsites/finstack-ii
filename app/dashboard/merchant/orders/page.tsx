@@ -95,6 +95,17 @@ export default function MerchantOrdersPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-4">
+        <Link href="/dashboard/merchant">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+        </Link>
+      </div>
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">My Orders</h1>
         <p className="text-gray-600">Manage and fulfill your P2P orders</p>

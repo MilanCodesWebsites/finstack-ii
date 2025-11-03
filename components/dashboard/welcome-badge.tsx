@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Clock } from "lucide-react"
+import { BadgeCheck, Clock } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface WelcomeBadgeProps {
@@ -16,7 +16,7 @@ export function WelcomeBadge({ firstName, isKYCVerified }: WelcomeBadgeProps) {
         <Tooltip>
           <TooltipTrigger>
             {isKYCVerified ? (
-              <CheckCircle2 className="w-5 h-5 text-[#2F67FA] animate-in fade-in duration-300" />
+              <BadgeCheck className="w-5 h-5 text-[#2F67FA] animate-in fade-in duration-300" />
             ) : (
               <Clock className="w-5 h-5 text-gray-400 animate-in fade-in duration-300" />
             )}

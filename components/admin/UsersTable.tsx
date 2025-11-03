@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -9,6 +10,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, UserX, UserCheck, Trash2 } from 'lucide-react';
+import { UserDetailsModal } from './UserDetailsModal';
 
 interface User {
   id: string;
@@ -25,9 +27,18 @@ interface User {
 interface UsersTableProps {
   users: User[];
   onAction: (id: string, action: 'suspend' | 'activate' | 'delete') => void;
+  onRoleChange?: (userId: string, newRole: string) => Promise<void> | void;
 }
 
-export function UsersTable({ users, onAction }: UsersTableProps) {
+export function UsersTable({ users, onAction, onRoleChange }: UsersTableProps) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setModalOpen(true);
+  };
+
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -62,6 +73,7 @@ export function UsersTable({ users, onAction }: UsersTableProps) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'not_required':
+      case 'not_submitted':
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -71,7 +83,8 @@ export function UsersTable({ users, onAction }: UsersTableProps) {
   const getKYCStatusText = (status: string) => {
     switch (status.toLowerCase()) {
       case 'not_required':
-        return 'Not Required';
+      case 'not_submitted':
+        return 'Not Submitted';
       case 'approved':
         return 'Approved';
       case 'pending':
@@ -161,7 +174,7 @@ export function UsersTable({ users, onAction }: UsersTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewUser(user)}>
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
@@ -197,6 +210,14 @@ export function UsersTable({ users, onAction }: UsersTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* User Details Modal */}
+      <UserDetailsModal 
+        user={selectedUser}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onRoleChange={onRoleChange}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Eye, ShieldCheck, ShieldX, FileText } from 'lucide-react';
+import { Eye, ShieldCheck, ShieldX, FileText, Ban, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -22,18 +22,34 @@ interface KYCRecord {
   submittedAt: string;
   status: string;
   documents: string[]; // For now just names
+  
+  // Extended KYC fields
+  firstName?: string;
+  lastName?: string;
+  otherName?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  countryOfResidence?: string;
+  stateRegion?: string;
+  idType?: string;
+  issuingCountry?: string;
+  idNumber?: string;
 }
 
 interface KYCOverviewProps {
   records: KYCRecord[];
   onApprove: (id: string) => Promise<void> | void;
   onReject: (id: string, reason: string) => Promise<void> | void;
+  onSuspend?: (id: string, reason: string) => Promise<void> | void;
 }
 
-export function KYCOverview({ records, onApprove, onReject }: KYCOverviewProps) {
+export function KYCOverview({ records, onApprove, onReject, onSuspend }: KYCOverviewProps) {
   const [selected, setSelected] = useState<KYCRecord | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [suspendOpen, setSuspendOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const [suspendReason, setSuspendReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -85,6 +101,32 @@ export function KYCOverview({ records, onApprove, onReject }: KYCOverviewProps) 
       toast({
         title: 'Rejection Failed',
         description: 'There was an issue rejecting this KYC request.',
+        variant: 'destructive'
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!selected || !onSuspend) return;
+    if (!suspendReason.trim()) return;
+    setProcessing(true);
+    try {
+      const r = suspendReason.trim();
+      await onSuspend(selected.id, r);
+      toast({
+        title: 'Merchant Suspended',
+        description: `${selected.name} has been suspended.`,
+        variant: 'destructive'
+      });
+      setSuspendReason('');
+      setSuspendOpen(false);
+      setSelected(null);
+    } catch (e) {
+      toast({
+        title: 'Suspension Failed',
+        description: 'There was an issue suspending this merchant.',
         variant: 'destructive'
       });
     } finally {
@@ -148,48 +190,173 @@ export function KYCOverview({ records, onApprove, onReject }: KYCOverviewProps) 
 
       {/* View/Manage Modal */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && !processing && setSelected(null)}>
-        <DialogContent className="max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+        <DialogContent className="max-w-[95vw] lg:max-w-7xl grid grid-cols-1 lg:grid-cols-5 gap-8 p-8 max-h-[85vh] overflow-y-auto">
           {selected && (
             <>
-              <div className="space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 <DialogHeader className="space-y-1">
                   <DialogTitle className="text-xl font-semibold tracking-tight">KYC Details</DialogTitle>
                   <DialogDescription className="text-sm text-gray-500">
                     Review the submitted identity information before taking action.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs uppercase text-gray-500 mb-1">Full Name</p>
-                    <p className="font-medium text-gray-900">{selected.name}</p>
+                
+                {/* Personal Information Section */}
+                <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                    Personal Information
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 pl-3.5">
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">First Name</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.firstName || selected.name.split(' ')[0] || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Last Name</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.lastName || selected.name.split(' ')[1] || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Other Name</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.otherName || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Gender</p>
+                      <p className="font-medium text-gray-900 text-sm capitalize">{selected.gender || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Date of Birth</p>
+                      <p className="font-medium text-gray-900 text-sm">
+                        {selected.dateOfBirth ? new Date(selected.dateOfBirth).toLocaleDateString() : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Phone Number</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.phone || '—'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs uppercase text-gray-500 mb-1">Legal Name (as on ID)</p>
-                    <p className="font-medium text-gray-900">{selected.legalName || '—'}</p>
+                </div>
+
+                {/* Location Information Section */}
+                <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
+                    Location Information
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 pl-3.5">
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Nationality</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.nationality || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Country of Residence</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.countryOfResidence || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">State/Region</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.stateRegion || '—'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs uppercase text-gray-500 mb-1">Address</p>
+                      <p className="font-medium text-gray-900 text-sm leading-snug">{selected.address || '—'}</p>
+                    </div>
                   </div>
+                </div>
+
+                {/* Identification Section */}
+                <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-600"></div>
+                    Identification
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 pl-3.5">
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">ID Type</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.idType || selected.documentType || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-gray-500 mb-1">Issuing Country</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.issuingCountry || '—'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs uppercase text-gray-500 mb-1">ID Number</p>
+                      <p className="font-medium text-gray-900 text-sm">{selected.idNumber || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="space-y-2">
                   <div>
                     <p className="text-xs uppercase text-gray-500 mb-1">Email</p>
                     <p className="font-medium text-gray-900">{selected.email}</p>
                   </div>
-                  <div>
-                    <p className="text-xs uppercase text-gray-500 mb-1">Phone</p>
-                    <p className="font-medium text-gray-900">{selected.phone || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase text-gray-500 mb-1">Address</p>
-                    <p className="font-medium text-gray-900 leading-snug max-w-xs">{selected.address || '—'}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Button disabled={processing} onClick={handleApprove} className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4" /> Approve
-                    </Button>
-                    <Button disabled={processing} onClick={() => setRejectOpen(true)} variant="outline" className="border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-2">
-                      <ShieldX className="w-4 h-4" /> Reject
-                    </Button>
-                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  {selected.status === 'rejected' || selected.status === 'suspended' ? (
+                    <>
+                      {/* Show status badge for rejected/suspended */}
+                      <div className="col-span-2 mb-2">
+                        <div className={cn(
+                          'p-3 rounded-lg flex items-center gap-2',
+                          selected.status === 'rejected' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'
+                        )}>
+                          <AlertTriangle className={cn(
+                            'w-5 h-5',
+                            selected.status === 'rejected' ? 'text-red-600' : 'text-orange-600'
+                          )} />
+                          <div>
+                            <p className={cn(
+                              'text-sm font-semibold',
+                              selected.status === 'rejected' ? 'text-red-900' : 'text-orange-900'
+                            )}>
+                              {selected.status === 'rejected' ? 'KYC Rejected' : 'Merchant Suspended'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {selected.status === 'rejected' 
+                                ? 'This merchant\'s KYC verification was rejected' 
+                                : 'This merchant has been suspended from the platform'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Action buttons for rejected/suspended merchants */}
+                      <Button 
+                        disabled={processing} 
+                        onClick={handleApprove} 
+                        className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                      >
+                        <ShieldCheck className="w-4 h-4" /> 
+                        {selected.status === 'suspended' ? 'Approve & Unsuspend' : 'Approve'}
+                      </Button>
+                      
+                      {selected.status === 'rejected' && onSuspend && (
+                        <Button 
+                          disabled={processing} 
+                          onClick={() => setSuspendOpen(true)} 
+                          variant="outline" 
+                          className="border-orange-500 text-orange-600 hover:bg-orange-50 flex items-center gap-2"
+                        >
+                          <Ban className="w-4 h-4" /> Suspend Merchant
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Normal approve/reject buttons for pending */}
+                      <Button disabled={processing} onClick={handleApprove} className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" /> Approve
+                      </Button>
+                      <Button disabled={processing} onClick={() => setRejectOpen(true)} variant="outline" className="border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-2">
+                        <ShieldX className="w-4 h-4" /> Reject
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="lg:col-span-2 space-y-4">
                 <p className="text-xs uppercase text-gray-500 tracking-wide">Submitted Documents</p>
                 
                 {/* Front and Back ID Images */}
@@ -263,6 +430,48 @@ export function KYCOverview({ records, onApprove, onReject }: KYCOverviewProps) 
           <DialogFooter className="flex gap-3 pt-2">
             <Button variant="outline" disabled={processing} onClick={() => { setReason(''); setRejectOpen(false); }}>Cancel</Button>
             <Button disabled={!reason.trim() || processing} onClick={handleReject} className="bg-red-600 hover:bg-red-700 text-white">Confirm Rejection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend Merchant Modal */}
+      <Dialog open={suspendOpen} onOpenChange={(o) => !o && !processing && setSuspendOpen(o)}>
+        <DialogContent className="max-w-md p-6">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                <Ban className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-semibold">Suspend Merchant</DialogTitle>
+                <DialogDescription className="text-sm">This action will prevent the merchant from accessing the platform.</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <p className="text-sm text-orange-900 font-medium mb-1">⚠️ Warning</p>
+              <p className="text-xs text-orange-800">
+                Suspending this merchant will immediately block their account access and freeze all transactions.
+                They can be reactivated by approving their KYC later.
+              </p>
+            </div>
+            <Textarea
+              placeholder="Reason for suspension (e.g., Fraudulent activity, policy violation, security concerns)"
+              value={suspendReason}
+              onChange={e => setSuspendReason(e.target.value)}
+              className="min-h-[120px]"
+            />
+          </div>
+          <DialogFooter className="flex gap-3 pt-2">
+            <Button variant="outline" disabled={processing} onClick={() => { setSuspendReason(''); setSuspendOpen(false); }}>Cancel</Button>
+            <Button 
+              disabled={!suspendReason.trim() || processing} 
+              onClick={handleSuspend} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Confirm Suspension
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

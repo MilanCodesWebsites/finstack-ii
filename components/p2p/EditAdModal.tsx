@@ -5,9 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { P2PAd } from '@/lib/p2p-mock-data';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Power, PowerOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface EditAdModalProps {
   ad: P2PAd;
@@ -86,7 +88,7 @@ export function EditAdModal({ ad, open, onClose, onSave }: EditAdModalProps) {
     onClose();
   };
 
-  const paymentMethodOptions = ['Bank Transfer', 'MTN Mobile Money', 'Alipay', 'Custom Account'];
+  const paymentMethodOptions = ['Bank Transfer', 'MTN Mobile Money', 'Alipay', 'Custom Account', 'CNGN Wallet'];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -96,6 +98,45 @@ export function EditAdModal({ ad, open, onClose, onSave }: EditAdModalProps) {
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Ad Status Toggle */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center",
+                  formData.isActive !== false ? "bg-green-100" : "bg-gray-100"
+                )}>
+                  {formData.isActive !== false ? (
+                    <Power className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <PowerOff className="w-5 h-5 text-gray-600" />
+                  )}
+                </div>
+                <div>
+                  <Label className="text-base font-semibold">Ad Status</Label>
+                  <p className="text-xs text-gray-600">
+                    {formData.isActive !== false 
+                      ? 'Ad is visible in marketplace' 
+                      : 'Ad is hidden from marketplace'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.isActive !== false}
+                  onCheckedChange={(checked) => handleChange('isActive', checked)}
+                  disabled={isLoading}
+                />
+                <span className={cn(
+                  "text-sm font-medium",
+                  formData.isActive !== false ? "text-green-600" : "text-gray-500"
+                )}>
+                  {formData.isActive !== false ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Price */}
           <div>
             <Label htmlFor="price">Price ({formData.fiatCurrency})</Label>

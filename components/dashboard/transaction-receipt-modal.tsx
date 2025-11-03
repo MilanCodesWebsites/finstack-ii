@@ -17,6 +17,18 @@ interface Transaction {
   amount: number;
   status: "Pending" | "Completed" | "Failed";
   reference: string;
+  // P2P specific fields
+  buyer?: {
+    name: string;
+    email: string;
+    amount: number;
+  };
+  seller?: {
+    name: string;
+    email: string;
+    amount: number;
+  };
+  paymentMethod?: string;
 }
 
 interface TransactionReceiptModalProps {
@@ -280,7 +292,7 @@ export function TransactionReceiptModal({ transaction, isOpen, onClose }: Transa
               </div>
 
               {/* Transaction Info */}
-              <div className="bg-gray-50 rounded-lg p-2.5 space-y-2">{" "}
+              <div className="bg-gray-50 rounded-lg p-2.5 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-600">Transaction Type</span>
                   <span className="text-xs font-medium text-gray-900">{transaction.type}</span>
@@ -307,7 +319,83 @@ export function TransactionReceiptModal({ transaction, isOpen, onClose }: Transa
                   <span className="text-xs text-gray-600">Wallet</span>
                   <span className="text-xs font-medium text-gray-900">{transaction.wallet}</span>
                 </div>
+
+                {transaction.paymentMethod && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600">Payment Method</span>
+                    <span className="text-xs font-medium text-gray-900">{transaction.paymentMethod}</span>
+                  </div>
+                )}
               </div>
+
+              {/* P2P Party Information */}
+              {transaction.type === 'P2P' && (transaction.buyer || transaction.seller) && (
+                <div className="space-y-2">
+                  {/* Buyer Information */}
+                  {transaction.buyer && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">B</span>
+                        </div>
+                        <h4 className="text-xs font-semibold text-green-900">Buyer Details</h4>
+                      </div>
+                      <div className="space-y-1.5 pl-8">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-green-700">Name</span>
+                          <span className="text-xs font-medium text-green-900">{transaction.buyer.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-green-700">Email</span>
+                          <span className="text-xs font-medium text-green-900 truncate max-w-[180px]">{transaction.buyer.email}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-green-700">Amount</span>
+                          <span className="text-xs font-bold text-green-900">
+                            {getCurrencySymbol(transaction.wallet)}
+                            {transaction.buyer.amount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Seller Information */}
+                  {transaction.seller && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">S</span>
+                        </div>
+                        <h4 className="text-xs font-semibold text-blue-900">Seller Details</h4>
+                      </div>
+                      <div className="space-y-1.5 pl-8">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-blue-700">Name</span>
+                          <span className="text-xs font-medium text-blue-900">{transaction.seller.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-blue-700">Email</span>
+                          <span className="text-xs font-medium text-blue-900 truncate max-w-[180px]">{transaction.seller.email}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-blue-700">Amount</span>
+                          <span className="text-xs font-bold text-blue-900">
+                            {getCurrencySymbol(transaction.wallet)}
+                            {transaction.seller.amount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Security Notice */}
               <div className="border-l-4 border-[#2F67FA] bg-blue-50 p-2 rounded-r-lg">
